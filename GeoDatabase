@@ -1,0 +1,82 @@
+CREATE TABLE PERFIL (
+per_id number PRIMARY KEY,
+per_funcao varchar2(20) NOT NULL, -- ADMIN, OPERADOR, ANALISTA, GESTOR, AUDITOR
+per_nome varchar2(60)
+);
+
+CREATE TABLE USUARIO (
+usu_id number PRIMARY KEY,
+usu_nome varchar2(120) NOT NULL,
+usu_email varchar2(255) NOT NULL UNIQUE,
+usu_senha_hash varchar(60) NOT NULL
+usu_status char(1) DEFAULT 'S' CHECK (usu_status IN ('S','N')),
+usu_data_cadastro timestamp DEFAULT SYSTIMESTAMP,
+CONSTRAINT FK_USU_PERFIL FOREIGN KEY (per_id) REFERENCES PERFIL (per_id)
+);
+
+CREATE TABLE AUDITORIA (
+aud_id number PRIMARY KEY,
+aud_operacao varchar2(20), -- CHECK ('INSERT','UPDATE','DELETE','LOGIN','EXPORT')
+aud_entidade_afetada varchar2(30) NOT MULL,
+aud_registro_id number, -- qual linha da entidade mudou
+aud_dados_antigos clob, --check(is jason)
+aud_dados_novos clob, --check(is jason)
+aud_ip_origem varchar2(45),
+aud_data_hora timestamp DEFAULT SYSTIMESTAMP NOT NULL,
+CONSTRAINT FK_AUD_USUARIO FOREIGN KEY (usu_id) REFERENCES USUARIO(usu_id)
+);
+
+CREATE TABLE FONTE_DO_DADO (
+fon_id number PRIMARY KEY,
+fon_nome varchar2(120) NOT NULL UNIQUE,
+fon_orgao varchar2(120),
+fon_esquema_tecnico clob CHECK(IS JASON)
+fon_crs_origem number(6)
+fon_compentencia varchar2(20) CHECK (fon_competencia IN ('mensal', 'anual', 'trimestral', 'irregular', 'sob demanda')), --de quanto em quanto tempo a fonte publica uma nova versão
+fon_data_cadastro timestamp DEFAULT SYSTIMETAMP,
+fon_status char(1) DEFAULT 'S' CHECK (usu_status IN ('S','N')),
+fon_cobertura_temporal_inicio date,
+fon_cobertura_temporal_fim date
+);
+
+CREATE TABLE ARQUIVO_BRUTO (
+arq_bruto_id number PRIMARY KEY,
+arq_nome varchar2(255) NOT NULL,
+arq_formato varchar2(15),
+arq_path_armazemento varchar2(500) NOT NULL,
+arq_tamanho_bytes number(15)
+arq_status varchar2(15) CHECK(arq_status IN ('RECEBIDO','VALIDANDO','APROVADO','REJEITADO','PROCESSADO')),
+arq_data_upload timestamp DEFAULT SYSTIMETAMP,
+> arq_hash char(64) NOT NULL UNIQUE, --evitar duplicidade de arquivo
+CONSTRAINT FK_ARQ_DONTE_DO_DADO FOREIGN KEY (fon_id) REFRENCES FONTE_DO_DADO(fon_id),
+CONSTRAINT FK_ARQ_USUARIO FOREIGN KEY (usu_id) REFERENCES USUARIO(usu_id)
+);
+
+CREATE TABLE VALIDACAO (
+val_id number PRIMARY KEY,
+val_total_registros number(10),
+val_registros_validos number(10),
+val_registros_invalidos number(10),
+val_status_final varchar2(15) CHECK(val_status_final IN ('APROVADO','REJEITADO')),
+val_data_execusao timestamp DEFAULT SYSTIMETAMP,
+CONSTRAINT FK_VAL_ARQUIVO_BRUTO FOREIGN KEY (arq_bruto_id) REFERENCES ARQUIVO_BRUTO (arq_bruto_id)
+);
+
+> CREATE TABLE QUARENTENA (
+qua_id number PRIMARY KEY,
+linha_origem number(10),
+qua_coluna_erro varchar2(60),
+qua_motivo_erro varchar2,
+qua_dado_original clob CHECK (IS JASON),
+qua_situacao varchar2 DEFAULT CHECK(qua_situacao IN ('PENDENTE','CORRIGIDO','DESCARTADO')),
+qua_data_resolucao timestamp DEFAULT SYSTIMETAMP,
+qua_data_registro timestamp DEFAULT SYSTIMETAMP,
+CONSTRAINT val_id
+CONSTRAINT imo_id
+);
+
+CREATE TABLE COMPROVADO (
+
+);
+
+CREATE TABLE MUNICIPIO
