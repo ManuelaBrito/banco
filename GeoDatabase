@@ -27,17 +27,20 @@ CONSTRAINT FK_AUD_USUARIO FOREIGN KEY (usu_id) REFERENCES USUARIO(usu_id)
 );
 
 CREATE TABLE FONTE_DO_DADO (
-fon_id number PRIMARY KEY,
-fon_nome varchar2(120) NOT NULL UNIQUE,
-fon_orgao varchar2(120),
-fon_esquema_tecnico clob CHECK(IS JASON)
-fon_crs_origem number(6)
-fon_compentencia varchar2(20) CHECK (fon_competencia IN ('mensal', 'anual', 'trimestral', 'irregular', 'sob demanda')), --de quanto em quanto tempo a fonte publica uma nova versão
-fon_data_cadastro timestamp DEFAULT SYSTIMETAMP,
-fon_status char(1) DEFAULT 'S' CHECK (usu_status IN ('S','N')),
-fon_cobertura_temporal_inicio date,
-fon_cobertura_temporal_fim date
+    fon_id                      NUMBER PRIMARY KEY,
+    fon_nome                    VARCHAR2(120) NOT NULL UNIQUE,
+    fon_orgao                   VARCHAR2(120),
+    fon_esquema_tecnico         CLOB CHECK (fon_esquema_tecnico IS JSON),
+    fon_crs_origem              NUMBER(6),
+    fon_competencia             VARCHAR2(20) CHECK (fon_competencia IN ('mensal', 'anual', 'trimestral', 'irregular', 'sob demanda')),
+    fon_data_cadastro           TIMESTAMP DEFAULT SYSTIMESTAMP,
+    fon_status                  CHAR(1) DEFAULT 'S' CHECK (fon_status IN ('S', 'N')),
+    fon_cobertura_temporal_inicio DATE,
+    fon_cobertura_temporal_fim    DATE
 );
+
+COMMENT ON COLUMN FONTE_DO_DADO.fon_competencia IS
+    'De quanto em quanto tempo a fonte publica uma nova versao';
 
 CREATE TABLE ARQUIVO_BRUTO (
 arq_bruto_id number PRIMARY KEY,
