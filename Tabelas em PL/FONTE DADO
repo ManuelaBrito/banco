@@ -1,0 +1,32 @@
+#FONTE DADO
+
+SET SERVEROUTPUT ON
+
+DECLARE
+
+BEGIN
+  EXECUTE IMMEDIATE q'[
+        CREATE TABLE FONTE_DO_DADO (
+            fon_id                        NUMBER PRIMARY KEY,
+            fon_nome                      VARCHAR2(120) NOT NULL UNIQUE,
+            fon_orgao                     VARCHAR2(120),
+            fon_esquema_tecnico           CLOB CHECK (fon_esquema_tecnico IS JSON),
+            fon_crs_origem                NUMBER(6),
+            fon_competencia               VARCHAR2(20)
+                CHECK (fon_competencia IN ('mensal', 'anual', 'trimestral', 'irregular', 'sob demanda')),
+            fon_data_cadastro             TIMESTAMP DEFAULT SYSTIMESTAMP,
+            fon_status                    CHAR(1) DEFAULT 'S' CHECK (fon_status IN ('S', 'N')),
+            fon_cobertura_temporal_inicio DATE,
+            fon_cobertura_temporal_fim    DATE,
+            CONSTRAINT ck_fon_cobertura CHECK (
+                fon_cobertura_temporal_fim >= fon_cobertura_temporal_inicio
+            )
+        )
+    ]');
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE != -955 THEN   -- se NAO for "tabela ja existe", estoura o erro
+            RAISE;
+        END IF;
+END;
+/
