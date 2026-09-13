@@ -1,1 +1,37 @@
+SET SERVEROUTPUT ON
 
+DECLARE
+
+
+BEGIN
+    exec_ddl('TABLE ARQUIVO_BRUTO', q'[
+        CREATE TABLE ARQUIVO_BRUTO (
+            arq_bruto_id           NUMBER PRIMARY KEY,
+            fon_id                 NUMBER NOT NULL,
+            usu_id                 NUMBER NOT NULL,
+            arq_nome               VARCHAR2(255) NOT NULL,
+            arq_formato            VARCHAR2(15),
+            arq_path_armazenamento VARCHAR2(500) NOT NULL,
+            arq_tamanho_bytes      NUMBER(15),
+            arq_status             VARCHAR2(15) DEFAULT 'RECEBIDO'  CHECK (arq_status IN ('RECEBIDO', 'VALIDANDO', 'APROVADO', 'REJEITADO', 'PROCESSADO')),
+            arq_data_upload        TIMESTAMP DEFAULT SYSTIMESTAMP,
+            arq_hash               CHAR(64) NOT NULL UNIQUE,
+            CONSTRAINT fk_arq_fonte_do_dado FOREIGN KEY (fon_id) REFERENCES FONTE_DO_DADO(fon_id),
+            CONSTRAINT fk_arq_usuario FOREIGN KEY (usu_id) REFERENCES USUARIO(usu_id)
+        )
+    ]');
+
+    exec_ddl('INDEX ix_arq_fon_id', q'[
+        CREATE INDEX ix_arq_fon_id ON ARQUIVO_BRUTO(fon_id)
+    ]');
+
+    exec_ddl('INDEX ix_arq_usu_id', q'[
+        CREATE INDEX ix_arq_usu_id ON ARQUIVO_BRUTO(usu_id)
+    ]');
+
+    exec_ddl('COMMENT arq_hash', q'[
+        COMMENT ON COLUMN ARQUIVO_BRUTO.arq_hash IS
+            'SHA-256 do arquivo, evita duplicidade'
+    ]');
+END;
+/
