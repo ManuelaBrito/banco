@@ -1,0 +1,58 @@
+SET SERVEROUTPUT ON
+
+DECLARE
+
+
+BEGIN
+    exec_ddl('TABLE MUNICIPIO', q'[
+        CREATE TABLE MUNICIPIO (
+            mun_id            NUMBER PRIMARY KEY,
+            arq_bruto_id      NUMBER NOT NULL,
+            mun_codigo_origem CHAR(7) NOT NULL UNIQUE,
+            mun_nome          VARCHAR2(120) NOT NULL,
+            mun_uf            CHAR(2) DEFAULT 'PR',
+            mun_geometria     SDO_GEOMETRY,
+            CONSTRAINT fk_mun_arquivo_bruto
+                FOREIGN KEY (arq_bruto_id) REFERENCES ARQUIVO_BRUTO(arq_bruto_id)
+        )
+    ]');
+    exec_ddl('INDEX ix_mun_arq_bruto_id', q'[
+        CREATE INDEX ix_mun_arq_bruto_id ON MUNICIPIO(arq_bruto_id)
+    ]');
+
+    BEGIN                                                                           // metadado espacial (DML, nao DDL -- obrigatorio antes do indice espacial)
+        INSERT INTO USER_SDO_GEOM_METADATA (table_name, column_name, diminfo, srid)
+        VALUES (
+            'MUNICIPIO',
+            'MUN_GEOMETRIA',
+            SDO_DIM_ARRAY(
+                SDO_DIM_ELEMENT('Longitude', -180, 180, 0.5),
+                SDO_DIM_ELEMENT('Latitude',   -90,  90, 0.5)
+            ),
+            4674   -- SIRGAS 2000, padrao oficial brasileiro
+        );
+        COMMIT;
+        DBMS_OUTPUT.PUT_LINE('criado   : METADATA MUNICIPIO.MUN_GEOMETRIA');
+    EXCEPTION
+        WHEN DUP_VAL_ON_INDEX THEN
+            DBMS_OUTPUT.PUT_LINE('ja existe: METADATA MUNICIPIO.MUN_GEOMETRIA');
+    END;
+
+    -- 4. indice espacial
+    exec_ddl('INDEX ix_mun_geometria', q'[
+        CREATE INDEX ix_mun_geometria ON MUNICIPIO(mun_geometria)
+            INDEXTYPE IS MDSYS.SPATIAL_INDEX_V2
+    ]');
+
+    -- 5. comentarios
+    exec_ddl('COMMENT mun_codigo_origem', q'[
+        COMMENT ON COLUMN MUNICIPIO.mun_codigo_origem IS
+            'Codigo IBGE de 7 digitos'
+    ]');
+
+    exec_ddl('COMMENT mun_geometria', q'[
+        COMMENT ON COLUMN MUNICIPIO.mun_geometria IS
+            'Poligono do limite municipal, SRID 4674 (SIRGAS 2000)'
+    ]');
+END;
+/
